@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EMI & Moratorium Generator</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background: #173b70;
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            margin: 30px auto;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #173b70;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 7px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 13px;
+            background: #173b70;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0e2b54;
+        }
+
+        .result-box {
+            background: #eef4ff;
+            padding: 15px;
+            margin-top: 12px;
+            border-radius: 8px;
+        }
+
+        .result-box strong {
+            color: #173b70;
+        }
+
+        .note {
+            background: #fff8e1;
+            padding: 15px;
+            border-left: 5px solid #f0ad00;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>EMI & Moratorium Generator</h1>
+    <p>Loan Feasibility & Repayment Assistant</p>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Enter Loan Details</h2>
+
+        <form method="POST">
+
+            {% csrf_token %}
+
+            <label>Available Cash / Margin (₹)</label>
+            <input type="number"
+                   name="margin"
+                   placeholder="Example: 50000"
+                   required>
+
+            <label>Loan Tenure (Years)</label>
+            <input type="number"
+                   name="tenure"
+                   step="0.5"
+                   placeholder="Example: 3"
+                   required>
+
+            <label>Moratorium Period (Months)</label>
+            <input type="number"
+                   name="moratorium"
+                   placeholder="Example: 3"
+                   required>
+
+            <button type="submit">
+                Calculate EMI
+            </button>
+
+        </form>
+    </div>
+
+
+    {% if result %}
+
+    <div class="card">
+
+        <h2>Loan Feasibility Result</h2>
+
+        <div class="result-box">
+            <strong>Available Margin:</strong>
+            ₹{{ result.margin|floatformat:2 }}
+        </div>
+
+        <div class="result-box">
+            <strong>Maximum Feasible Project Cost:</strong>
+            ₹{{ result.max_project_cost|floatformat:2 }}
+        </div>
+
+        <div class="result-box">
+            <strong>Maximum Eligible Borrowing:</strong>
+            ₹{{ result.max_loan|floatformat:2 }}
+        </div>
+
+        <div class="result-box">
+            <strong>Applicable Scheme:</strong>
+            {{ result.scheme }}
+        </div>
+
+        <div class="result-box">
+            <strong>Interest Rate:</strong>
+            {{ result.interest }}% per annum
+        </div>
+
+        <div class="result-box">
+            <strong>Moratorium:</strong>
+            {{ result.moratorium }} months
+        </div>
+
+        <div class="result-box">
+            <strong>Total Tenure:</strong>
+            {{ result.tenure }} years
+        </div>
+
+        <div class="result-box">
+            <strong>Repayment Period:</strong>
+            {{ result.repayment_months }} months
+        </div>
+
+        <div class="result-box">
+            <strong>Number of Quarterly Installments:</strong>
+            {{ result.quarters }}
+
+
+        </div>
+        <div class="result-box">
+    <strong>Total Interest Payable:</strong>
+    ₹{{ result.total_interest|floatformat:2 }}
+</div>
+
+<div class="result-box">
+    <strong>Total Repayment:</strong>
+    ₹{{ result.total_repayment|floatformat:2 }}
+</div>
+
+<div class="result-box">
+    <strong>Quarterly Interest Rate:</strong>
+    {{ result.quarterly_rate|floatformat:4 }}
+</div>
+
+<div class="result-box">
+    <strong>Number of Quarterly Payments (n):</strong>
+    {{ result.formula_n }}
+</div>
+
+<div class="result-box">
+    <strong>Loan Principal (L):</strong>
+    ₹{{ result.formula_loan|floatformat:2 }}
+</div>
+
+<div class="note">
+    <strong>Quarterly Payment Formula:</strong><br><br>
+
+    Q = L × r × (1 + r)<sup>n</sup>
+    / ((1 + r)<sup>n</sup> − 1)
+
+    <br><br>
+
+    <strong>Where:</strong><br>
+    Q = Quarterly installment<br>
+    L = Loan principal<br>
+    r = Quarterly interest rate<br>
+    n = Number of quarterly repayment periods
+
+    <br><br>
+
+    <strong>Moratorium-adjusted n:</strong><br>
+    n = (Total Months − Moratorium Months) / 3
+</div>
+
+        <div class="result-box">
+            <strong>Quarterly Installment:</strong>
+            ₹{{ result.quarterly_installment|floatformat:2 }}
+        </div>
+
+
+        <div class="note">
+            <strong>Transparency:</strong><br>
+            The entrepreneur contributes approximately
+            <strong>10%</strong> of the project cost as margin money,
+            while approximately <strong>90%</strong> is provided as
+            a concessional loan, based on the assumed scheme rules.
+        </div>
+
+    </div>
+      {% if schedule %}
+
+<div class="card">
+
+    <h2>Quarter-wise Repayment Schedule</h2>
+
+    <div style="overflow-x:auto;">
+
+        <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+
+            <tr style="background:#173b70; color:white;">
+                <th style="padding:10px;">Quarter</th>
+                <th style="padding:10px;">Opening Balance</th>
+                <th style="padding:10px;">Interest</th>
+                <th style="padding:10px;">Principal</th>
+                <th style="padding:10px;">Installment</th>
+                <th style="padding:10px;">Closing Balance</th>
+            </tr>
+
+            {% for row in schedule %}
+
+            <tr style="text-align:center;">
+
+                <td style="padding:10px; border-bottom:1px solid #ddd;">
+                    Q{{ row.quarter }}
+                </td>
+
+                <td style="padding:10px; border-bottom:1px solid #ddd;">
+                    ₹{{ row.opening|floatformat:2 }}
+                </td>
+
+                <td style="padding:10px; border-bottom:1px solid #ddd;">
+                    ₹{{ row.interest|floatformat:2 }}
+                </td>
+
+                <td style="padding:10px; border-bottom:1px solid #ddd;">
+                    ₹{{ row.principal|floatformat:2 }}
+                </td>
+
+                <td style="padding:10px; border-bottom:1px solid #ddd;">
+                    ₹{{ row.installment|floatformat:2 }}
+                </td>
+
+                <td style="padding:10px; border-bottom:1px solid #ddd;">
+                    ₹{{ row.closing|floatformat:2 }}
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}
+    {% endif %}
+
+</div>
+
+</body>
+</html>
